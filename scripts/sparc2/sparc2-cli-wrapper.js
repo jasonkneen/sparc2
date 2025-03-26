@@ -228,23 +228,25 @@ function runSimplifiedCli() {
     return;
   }
   
-  // Handle MCP command
-  if (args[0] === 'mcp') {
-    const mcpWrapperPath = path.join(__dirname, 'sparc2-mcp-wrapper.js');
-    if (fs.existsSync(mcpWrapperPath)) {
-      console.log(`${colors.green}Found MCP wrapper at: ${mcpWrapperPath}${colors.reset}`);
-      console.log(`${colors.blue}Running MCP server...${colors.reset}`);
+  // Handle supported commands with wrappers
+  if (['mcp', 'analyze', 'modify'].includes(args[0])) {
+    const wrapperName = `sparc2-${args[0]}-wrapper.js`;
+    const wrapperPath = path.join(__dirname, wrapperName);
+    
+    if (fs.existsSync(wrapperPath)) {
+      console.log(`${colors.green}Found ${args[0]} wrapper at: ${wrapperPath}${colors.reset}`);
+      console.log(`${colors.blue}Running ${args[0]} command...${colors.reset}`);
       
-      // Spawn the MCP process
-      const mcpProcess = spawn('node', [mcpWrapperPath, ...args.slice(1)], {
+      // Spawn the process
+      const childProcess = spawn('node', [wrapperPath, ...args.slice(1)], {
         stdio: 'inherit',
         env: process.env
       });
       
       // Handle process exit
-      mcpProcess.on('exit', (code) => {
+      childProcess.on('exit', (code) => {
         if (code !== 0) {
-          console.log(`${colors.red}MCP server exited with code ${code}${colors.reset}`);
+          console.log(`${colors.red}Command exited with code ${code}${colors.reset}`);
           process.exit(code);
         }
       });
@@ -252,7 +254,7 @@ function runSimplifiedCli() {
       // Forward signals to the child process
       ['SIGINT', 'SIGTERM'].forEach(signal => {
         process.on(signal, () => {
-          mcpProcess.kill(signal);
+          childProcess.kill(signal);
         });
       });
       
