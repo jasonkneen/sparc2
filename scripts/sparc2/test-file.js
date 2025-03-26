@@ -75,7 +75,7 @@ function runTests() {
     { func: subtract, desc: "subtract", cases: [[10, 4, 6], [10, 0, 10], [-10, 4, -14], [0.1, 0.2, -0.1, true]] },
     { func: multiply, desc: "multiply", cases: [[6, 7, 42], [6, 0, 0], [-6, 7, -42], [1e5, 1e5, 1e10]] },
     { func: divide, desc: "divide", cases: [[20, 5, 4], [-20, 5, -4], [0.1, 0.2, 0.5]] },
-    { func: power, desc: "power", cases: [[2, 3, 8], [2, 0, 1], [2, -2, 0.25], [2, 10, 1024]] },
+    { func: power, desc: "power", cases: [[2, 3, 8], [2, 0, 1], [2, -2, 0.25], [2, 10, 1024], [10, -1, 0.1]] },
     { func: modulo, desc: "modulo", cases: [[20, 3, 2], [-20, 3, -2]] }
   ];
 
@@ -88,22 +88,23 @@ function runTests() {
 
   console.log("\nRunning error handling tests:");
   console.log("Testing divide by zero (should catch error):");
-  testErrorHandling(() => divide(10, 0));
+  testErrorHandling(() => divide(10, 0), "divide", 10, 0);
 
   console.log("Testing modulo with zero divisor (should catch error):");
-  testErrorHandling(() => modulo(10, 0));
+  testErrorHandling(() => modulo(10, 0), "modulo", 10, 0);
 }
 
 function runTest(description, a, b, result, expected, isApproximate = false) {
-  const pass = isApproximate ? Math.abs(result - expected) < 1e-10 : result === expected;
+  const precisionThreshold = 1e-12;
+  const pass = isApproximate ? Math.abs(result - expected) < precisionThreshold : result === expected;
   console.log(`Test: ${description} | Inputs: (${a}, ${b}) | Result: ${result} | Expected: ${expected} | ${pass ? "PASS" : "FAIL"}`);
 }
 
-function testErrorHandling(testFunction) {
+function testErrorHandling(testFunction, funcName, a, b) {
   try {
     testFunction();
   } catch (error) {
-    console.log("Error caught:", error.message);
+    console.log(`Error caught in ${funcName} with inputs (${a}, ${b}):`, error.message);
   }
 }
 
