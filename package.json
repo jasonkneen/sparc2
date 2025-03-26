@@ -1,0 +1,24 @@
+{
+  "name": "mcp-creator",
+  "version": "1.0.0",
+  "description": "MCP Server Creator - Console CLI Interface",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [
+    "mcp",
+    "server",
+    "creator",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "inquirer": "^8.2.5"
+  }
+}

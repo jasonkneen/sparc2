@@ -1,4 +1,4 @@
-
+![SPARC2 Logo](assets/image.png)
 
 # SPARC Code Agent + MCP Server
 SPARC 2.0, agentic code analysis and generation, is an intelligent coding agent framework built to automate and streamline software development. It combines secure execution environments, version control, and Model Context Protocol (MCP) capabilities into a unified system where specialized agents collaborate to understand, modify, and manage code. 
@@ -35,8 +35,6 @@ SPARC 2.0 employs a ReACT (Reason + Act) strategy to semantically understand cod
 - **Cross-Platform**: Works on any platform that supports Deno
 - **MCP Integration**: Provides Model Context Protocol (MCP) server for AI agent integration
 - **Real-time Updates**: Supports Server-Sent Events (SSE) for streaming real-time progress and results
-
-![SPARC2 Logo](assets/image.png)
 
 ## How It Works
 
@@ -371,55 +369,6 @@ Git repository for version control and checkpointing.
   - Returns: Result of the rollback operation
 
 #### 2. vector_store
-Vector database for storing and searching code changes and logs.
-
-**Properties**:
-- `id`: ID of the vector store
-- `size`: Number of entries in the vector store
-
-**Methods**:
-- **search**: Searches for similar entries in the vector store
-  - Parameters: `query` (Search query), `limit` (Maximum number of results)
-  - Returns: Array of search results with relevance scores
-- **index**: Indexes a new entry in the vector store
-  - Parameters: `content` (Content to index), `metadata` (Metadata for the entry)
-  - Returns: Result of the indexing operation
-
-#### 3. sandbox
-Secure sandbox for executing code.
-
-**Properties**:
-- `languages`: Supported programming languages
-- `timeout`: Maximum execution time in seconds
-
-**Methods**:
-- **execute**: Executes code in the sandbox
-  - Parameters: `code` (Code to execute), `language` (Programming language)
-  - Returns: Execution results including stdout, stderr, and any errors
-
-### Testing MCP Endpoints with curl
-
-You can test the MCP server endpoints using curl commands. First, start the MCP server:
-
-```bash
-./sparc api --port 3001
-```
-
-#### 1. Discover Available Tools and Resources
-
-```bash
-curl -X GET http://localhost:3001/discover
-```
-
-This will return a JSON object containing all available tools and resources.
-
-#### 2. Execute Code
-
-```bash
-curl -X POST http://localhost:3001/execute_code \
-  -H "Content-Type: application/json" \
-  -d '{
-    "code": "console.log(\"Hello, SPARC2!\"); const sum = (a, b) => a + b; console.log(sum(5, 3));",
     "language": "javascript"
   }'
 ```
