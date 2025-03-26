@@ -1,3 +1,5 @@
+
+
 # SPARC Code Agent + MCP Server
 SPARC 2.0, agentic code analysis and generation, is an intelligent coding agent framework built to automate and streamline software development. It combines secure execution environments, version control, and Model Context Protocol (MCP) capabilities into a unified system where specialized agents collaborate to understand, modify, and manage code. 
 
@@ -33,6 +35,8 @@ SPARC 2.0 employs a ReACT (Reason + Act) strategy to semantically understand cod
 - **Cross-Platform**: Works on any platform that supports Deno
 - **MCP Integration**: Provides Model Context Protocol (MCP) server for AI agent integration
 - **Real-time Updates**: Supports Server-Sent Events (SSE) for streaming real-time progress and results
+
+![SPARC2 Logo](assets/image.png)
 
 ## How It Works
 
