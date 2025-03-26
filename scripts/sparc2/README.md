@@ -1,5 +1,5 @@
 # SPARC Code Agent + MCP Server
-SPARC 2.0, agentic code analysis and generation, is an intelligent coding agent framework built to automate and streamline software development. It combines secure execution environments, version control, and Model Context Protocol (MCP) capabilities into a unified system where specialized agents collaborate to understand, modify, and manage code. 
+SPARC 2.0: agentic code analysis and generation. It's an intelligent coding agent framework built to automate and streamline software development. It combines secure execution environments, vector similarity (Code and Unified Diffs), version control, secure sandbox/code interpreter, OpenAi agents API and Model Context Protocol (MCP) capabilities into a unified system where specialized agents collaborate to understand, modify, and manage code. 
 
 These agents analyze patterns, suggest improvements, implement changes, and validate solutions, all while maintaining a detailed history that allows for easy rollbacks when needed.
 ### Install globally

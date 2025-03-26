@@ -29,7 +29,7 @@ let isShuttingDown = false;
 /**
  * Find the Deno executable by checking multiple common installation locations
  * Falls back to the original path if no Deno installation is found
- * @returns {string} Path to the Deno executable
+ * @returns {string|null} Path to the Deno executable or null if not found
  */
 function findDenoExecutable() {
   const possiblePaths = [
@@ -64,10 +64,35 @@ function findDenoExecutable() {
     console.error("[MCP Wrapper] Using Deno from PATH");
     return "deno";
   } catch (error) {
-    // If we can't find deno anywhere else, fall back to the original path
-    console.error("[MCP Wrapper] Falling back to default Deno path");
-    return "/home/codespace/.deno/bin/deno";
+    // If we can't find deno anywhere, return null
+    console.error("[MCP Wrapper] Deno not found in any standard location");
+    return null;
   }
+}
+
+/**
+ * Prints installation instructions for Deno
+ */
+function printDenoInstallInstructions() {
+  console.error("\n========== DENO NOT FOUND ==========");
+  console.error(
+    "SPARC2 requires Deno to run. Please install Deno using one of the following methods:",
+  );
+  console.error("\nLinux/macOS:");
+  console.error("  curl -fsSL https://deno.land/install.sh | sh");
+  console.error("\nWindows (PowerShell):");
+  console.error("  irm https://deno.land/install.ps1 | iex");
+  console.error("\nUsing Homebrew (macOS/Linux):");
+  console.error("  brew install deno");
+  console.error("\nUsing Chocolatey (Windows):");
+  console.error("  choco install deno");
+  console.error("\nUsing Scoop (Windows):");
+  console.error("  scoop install deno");
+  console.error(
+    "\nAfter installation, you may need to restart your terminal or add Deno to your PATH.",
+  );
+  console.error("For more information, visit: https://deno.land/#installation");
+  console.error("=====================================\n");
 }
 
 // Function to start the HTTP server
@@ -78,6 +103,13 @@ async function startHttpServer() {
 
     // Find the Deno executable
     const denoPath = findDenoExecutable();
+
+    // Check if Deno is installed
+    if (!denoPath) {
+      printDenoInstallInstructions();
+      reject(new Error("Deno is not installed. Please install Deno and try again."));
+      return;
+    }
 
     // IMPORTANT: Start the HTTP API server directly, not the MCP server
     // This avoids the circular dependency where the MCP server tries to start this wrapper
