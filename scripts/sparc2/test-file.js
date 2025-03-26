@@ -79,12 +79,14 @@ function runTests() {
     { func: modulo, desc: "modulo", cases: [[20, 3, 2], [-20, 3, -2]] }
   ];
 
+  console.log("Running arithmetic tests:");
   tests.forEach(test => {
     test.cases.forEach(([a, b, expected, isApproximate = false]) => {
       runTest(test.desc, a, b, test.func(a, b), expected, isApproximate);
     });
   });
 
+  console.log("\nRunning error handling tests:");
   console.log("Testing divide by zero (should catch error):");
   testErrorHandling(() => divide(10, 0));
 
