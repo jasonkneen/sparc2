@@ -68,13 +68,23 @@ function modulo(a, b) {
   return a % b;
 }
 
+/**
+ * Processes an array of numbers by applying a given function to each element.
+ * @param {Array<number>} array - The array of numbers to process
+ * @param {Function} func - The function to apply to each element
+ * @returns {Array<number>} The processed array
+ */
+function processArray(array, func) {
+  return array.map(func);
+}
+
 // Test cases
 function runTests() {
   const precisionThreshold = 1e-12;
   const tests = [
     { func: add, desc: "add", cases: [[5, 3, 8], [5, 0, 5], [-5, 3, -2], [1e10, 1e10, 2e10], [0.1, 0.2, 0.3, true]] },
     { func: subtract, desc: "subtract", cases: [[10, 4, 6], [10, 0, 10], [-10, 4, -14], [0.1, 0.2, -0.1, true]] },
-    { func: multiply, desc: "multiply", cases: [[6, 7, 42], [6, 0, 0], [-6, 7, -42], [1e5, 1e5, 1e10]] },
+    { func: multiply, desc: "multiply", cases: [[6, 7, 42], [6, 0, 0], [-6, 7, -42], [1e5, 1e5, 1e10], [0.1, 0.2, 0.02, true]] },
     { func: divide, desc: "divide", cases: [[20, 5, 4], [-20, 5, -4], [0.1, 0.2, 0.5]] },
     { func: power, desc: "power", cases: [[2, 3, 8], [2, 0, 1], [2, -2, 0.25], [2, 10, 1024], [10, -1, 0.1]] },
     { func: modulo, desc: "modulo", cases: [[20, 3, 2], [-20, 3, -2]] }
