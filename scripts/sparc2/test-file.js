@@ -70,6 +70,7 @@ function modulo(a, b) {
 
 // Test cases
 function runTests() {
+  const precisionThreshold = 1e-12;
   const tests = [
     { func: add, desc: "add", cases: [[5, 3, 8], [5, 0, 5], [-5, 3, -2], [1e10, 1e10, 2e10], [0.1, 0.2, 0.3, true]] },
     { func: subtract, desc: "subtract", cases: [[10, 4, 6], [10, 0, 10], [-10, 4, -14], [0.1, 0.2, -0.1, true]] },
@@ -82,7 +83,7 @@ function runTests() {
   console.log("Running arithmetic tests:");
   tests.forEach(test => {
     test.cases.forEach(([a, b, expected, isApproximate = false]) => {
-      runTest(test.desc, a, b, test.func(a, b), expected, isApproximate);
+      runTest(test.desc, a, b, test.func(a, b), expected, isApproximate, precisionThreshold);
     });
   });
 
@@ -94,8 +95,7 @@ function runTests() {
   testErrorHandling(() => modulo(10, 0), "modulo", 10, 0);
 }
 
-function runTest(description, a, b, result, expected, isApproximate = false) {
-  const precisionThreshold = 1e-12;
+function runTest(description, a, b, result, expected, isApproximate = false, precisionThreshold) {
   const pass = isApproximate ? Math.abs(result - expected) < precisionThreshold : result === expected;
   console.log(`Test: ${description} | Inputs: (${a}, ${b}) | Result: ${result} | Expected: ${expected} | ${pass ? "PASS" : "FAIL"}`);
 }
