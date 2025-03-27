@@ -77,10 +77,10 @@ function modulo(a, b) {
  */
 function processArray(array, func) {
   if (!Array.isArray(array)) {
-    throw new Error('The first argument must be an array.');
+    throw new Error("Input must be an array.");
   }
   if (typeof func !== 'function') {
-    throw new Error('The second argument must be a function.');
+    throw new Error("Second argument must be a function.");
   }
   return array.map(func);
 }
@@ -97,10 +97,18 @@ function runTests() {
     { func: modulo, desc: "modulo", cases: [[20, 3, 2], [-20, 3, -2]] }
   ];
 
+  let passedTests = 0;
+  let failedTests = 0;
+
   console.log("Running arithmetic tests:");
   tests.forEach(test => {
     test.cases.forEach(([a, b, expected, isApproximate = false]) => {
-      runTest(test.desc, a, b, test.func(a, b), expected, isApproximate, precisionThreshold);
+      const pass = runTest(test.desc, a, b, test.func(a, b), expected, isApproximate, precisionThreshold);
+      if (pass) {
+        passedTests++;
+      } else {
+        failedTests++;
+      }
     });
   });
 
@@ -110,11 +118,14 @@ function runTests() {
 
   console.log("Testing modulo with zero divisor (should catch error):");
   testErrorHandling(() => modulo(10, 0), "modulo", 10, 0);
+
+  console.log(`\nTest Summary: ${passedTests} Passed, ${failedTests} Failed`);
 }
 
 function runTest(description, a, b, result, expected, isApproximate = false, precisionThreshold) {
   const pass = isApproximate ? Math.abs(result - expected) < precisionThreshold : result === expected;
   console.log(`Test: ${description} | Inputs: (${a}, ${b}) | Result: ${result} | Expected: ${expected} | ${pass ? "PASS" : "FAIL"}`);
+  return pass;
 }
 
 function testErrorHandling(testFunction, funcName, a, b) {
