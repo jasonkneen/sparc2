@@ -7,44 +7,27 @@
 
 // A simple function with some issues to fix
 function calculateTotal(items) {
-  let total = 0;
-  
-  // Loop through items and add prices
-  for (var i = 0; i < items.length; i++) {
-    total = total + items[i].price;
-  }
+  // Use reduce to calculate total
+  let total = items.reduce((sum, item) => sum + item.price, 0);
   
   // Apply discount if total is over 100
   if (total > 100) {
-    total = total * 0.9;
+    total *= 0.9;
   }
   
   return total;
 }
 
-// An inefficient way to find an item
+// An efficient way to find an item
 function findItem(items, id) {
-  for (var i = 0; i < items.length; i++) {
-    if (items[i].id == id) {
-      return items[i];
-    }
-  }
-  return null;
+  return items.find(item => item.id === id) || null;
 }
 
-// A function with unnecessary complexity
+// A simplified function to format price
 function formatPrice(price) {
-  var formatted = "";
-  if (price) {
-    if (typeof price === "number") {
-      formatted = "$" + price.toFixed(2);
-    } else {
-      formatted = "$" + parseFloat(price).toFixed(2);
-    }
-  } else {
-    formatted = "$0.00";
-  }
-  return formatted;
+  // Ensure price is a number and format it
+  const numPrice = typeof price === "number" ? price : parseFloat(price) || 0;
+  return `$${numPrice.toFixed(2)}`;
 }
 
 // Example usage
