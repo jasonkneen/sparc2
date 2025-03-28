@@ -6,7 +6,7 @@
  */
 
 // A simple function with some issues to fix
-function calculateTotal(items) {
+const calculateTotal = (items) => {
   // Use reduce to calculate total
   let total = items.reduce((sum, item) => sum + item.price, 0);
   
@@ -16,19 +16,17 @@ function calculateTotal(items) {
   }
   
   return total;
-}
+};
 
 // An efficient way to find an item
-function findItem(items, id) {
-  return items.find(item => item.id === id) || null;
-}
+const findItem = (items, id) => items.find(item => item.id === id) || null;
 
 // A simplified function to format price
-function formatPrice(price) {
+const formatPrice = (price) => {
   // Ensure price is a number and format it
   const numPrice = typeof price === "number" ? price : parseFloat(price) || 0;
   return `$${numPrice.toFixed(2)}`;
-}
+};
 
 // Example usage
 const items = [
@@ -38,9 +36,9 @@ const items = [
 ];
 
 const total = calculateTotal(items);
-console.log("Total: " + formatPrice(total));
+console.log(`Total: ${formatPrice(total)}`);
 
 const item = findItem(items, 2);
 if (item) {
-  console.log("Found item: " + item.name + " - " + formatPrice(item.price));
+  console.log(`Found item: ${item.name} - ${formatPrice(item.price)}`);
 }
