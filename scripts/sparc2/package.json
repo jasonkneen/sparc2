@@ -1,7 +1,9 @@
+// This file is the package configuration for the SPARC 2.0 project. It defines the project's metadata, scripts, dependencies, and other settings necessary for building, testing, and running the project using npm and Deno. The file also includes information about the project's repository, author, and license.
+
 {
   "name": "@agentics.org/sparc2",
   "version": "2.0.24",
-  "description": "SPARC 2.0 - Autonomous Vector Coding Agent + MCP. SPARC 2.0, vectorized AI code analysis, is an intelligent coding agent framework built to automate and streamline software development. It combines  secure execution environments, and version control into a unified system where specialized agents collaborate to understand, modify, and manage code. These agents analyze patterns, suggest improvements, implement changes, and validate solutions—all while maintaining a detailed history that allows for easy rollbacks when needed.",
+  "description": "SPARC 2.0 - Autonomous Vector Coding Agent + MCP. SPARC 2.0, vectorized AI code analysis, is an intelligent coding agent framework built to automate and streamline software development. It combines secure execution environments, and version control into a unified system where specialized agents collaborate to understand, modify, and manage code. These agents analyze patterns, suggest improvements, implement changes, and validate solutions—all while maintaining a detailed history that allows for easy rollbacks when needed.",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "type": "module",
