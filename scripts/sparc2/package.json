@@ -1,8 +1,3 @@
-// This package.json file is the configuration file for the SPARC 2.0 project. 
-// It defines the project's metadata, dependencies, scripts, and other settings 
-// necessary for building, testing, and publishing the project. It is essential 
-// for managing the project's lifecycle and ensuring compatibility with npm and Deno environments.
-
 {
   "name": "@agentics.org/sparc2",
   "version": "2.0.24",

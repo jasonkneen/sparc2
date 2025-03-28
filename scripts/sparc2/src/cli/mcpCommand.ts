@@ -17,14 +17,45 @@ export async function mcpCommand(
   options: Record<string, any>,
 ): Promise<void> {
   try {
-    // Get the path to the mcpServerWrapper.js file
+    // Try multiple possible locations for the mcpServerWrapper.js file
     const denoDir = Deno.cwd();
-    const wrapperPath = path.join(denoDir, "src", "mcp", "mcpServerWrapper.js");
+    const possiblePaths = [
+      // Current directory's src/mcp path
+      path.join(denoDir, "src", "mcp", "mcpServerWrapper.js"),
+      // Project root's src/mcp path
+      path.join(denoDir, "..", "src", "mcp", "mcpServerWrapper.js"),
+      // Absolute path from project root
+      path.join(denoDir, "..", "..", "src", "mcp", "mcpServerWrapper.js"),
+      // Direct path to the wrapper in scripts/sparc2
+      path.join(denoDir, "..", "..", "scripts", "sparc2", "src", "mcp", "mcpServerWrapper.js"),
+      // From scripts/sparc2 directory
+      path.join(denoDir, "src", "mcp", "mcpServerWrapper.js"),
+    ];
 
-    // Check if the wrapper exists
-    if (!await exists(wrapperPath)) {
-      throw new Error(`MCP server wrapper not found at ${wrapperPath}`);
+    // Find the first path that exists
+    let wrapperPath = null;
+    for (const testPath of possiblePaths) {
+      if (await exists(testPath)) {
+        wrapperPath = testPath;
+        break;
+      }
     }
+
+    // If no path exists, try to find it relative to the main module path
+    if (!wrapperPath) {
+      const mainModuleDir = path.dirname(path.fromFileUrl(Deno.mainModule));
+      const relativeToMainModule = path.join(mainModuleDir, "..", "mcp", "mcpServerWrapper.js");
+      if (await exists(relativeToMainModule)) {
+        wrapperPath = relativeToMainModule;
+      }
+    }
+
+    // Check if we found the wrapper
+    if (!wrapperPath) {
+      throw new Error(`MCP server wrapper not found. Tried paths: ${possiblePaths.join(", ")}`);
+    }
+
+    console.log(`Found MCP server wrapper at: ${wrapperPath}`);
 
     // Log startup
     await logInfo("Starting SPARC2 MCP server using stdio transport");

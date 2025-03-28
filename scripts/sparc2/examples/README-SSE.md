@@ -1,105 +1,74 @@
-# SPARC2 Server-Sent Events (SSE) Example
+# SPARC2 SSE Examples
 
-This example demonstrates how to implement real-time streaming updates for SPARC2 operations using Server-Sent Events (SSE).
+This directory contains examples demonstrating the Server-Sent Events (SSE) functionality in SPARC2.
 
-## What is SSE?
+## Overview
 
-Server-Sent Events (SSE) is a server push technology enabling a client to receive automatic updates from a server via an HTTP connection. Unlike WebSockets, SSE is a one-way communication channel - the server can send messages to the client, but not vice versa.
+Server-Sent Events (SSE) provide a way for the server to push real-time updates to clients. In SPARC2, SSE is used to provide progress updates during long-running operations like code analysis and modification.
 
-SSE is simpler to implement than WebSockets and is well-suited for scenarios where you need real-time updates from the server but don't need to send data from the client to the server over the same connection.
+## Examples
 
-## How This Example Works
+### 1. HTML Client Example
 
-This example creates two servers:
+The `analyze-sse-client.html` file is a standalone HTML page that demonstrates how to connect to the SSE stream and display real-time progress updates.
 
-1. **SPARC2 API Server**: The standard SPARC2 HTTP API server (on a dynamically selected available port)
-2. **SSE Wrapper Server**: A Node.js server that:
-   - Forwards requests to the SPARC2 API
-   - Provides an SSE endpoint for clients to connect to
-   - Broadcasts real-time updates during SPARC2 operations
-   - Serves a simple web UI for testing
+Features:
+- Connect to the SSE stream for analyze_code and modify_code operations
+- Display progress bar and step information
+- Show detailed logs of all events
+- Display the final result
 
-The SSE wrapper server captures stdout/stderr output from the SPARC2 API server and broadcasts it to all connected clients, providing real-time visibility into the progress of long-running operations like code analysis and modification.
+### 2. Run SSE Example Script
 
-## Running the Example
+The `run-sse-example.sh` script automates the process of:
+1. Starting the MCP server with SSE support
+2. Opening the HTML client in your default browser
+3. Handling cleanup when you're done
 
-To run the example:
+## Running the Examples
+
+### Method 1: Using the Script
+
+Simply run the provided script:
 
 ```bash
-# Make the script executable
-chmod +x run-sse-example.sh
-
-# Run the example
-./run-sse-example.sh
+./scripts/sparc2/examples/run-sse-example.sh
 ```
 
-Then open the URL displayed in the console (typically http://localhost:3002) in your web browser to see the example in action.
+This will start the MCP server and open the HTML client in your browser.
 
-## Port Management
+### Method 2: Manual Setup
 
-The example automatically handles port conflicts:
+1. Start the MCP server with SSE support:
 
-1. It first tries to find an available port for the SPARC2 API server (starting at 3001)
-2. Then it finds an available port for the SSE server (starting at 3002)
-3. The actual ports used will be displayed in the console and in the web UI
+```bash
+node scripts/sparc2/sparc2-mcp-wrapper-sse.js
+```
 
-This ensures the example can run even if other services are using the default ports.
+2. Open the HTML client in your browser:
 
-## Using the Web UI
+```bash
+# On macOS
+open scripts/sparc2/examples/analyze-sse-client.html
 
-The web UI provides a simple interface to:
+# On Linux
+xdg-open scripts/sparc2/examples/analyze-sse-client.html
 
-1. Specify files to analyze/modify (comma-separated paths)
-2. Enter a task description
-3. Trigger code analysis or modification
-4. View real-time updates during the operation
+# On Windows
+start scripts/sparc2/examples/analyze-sse-client.html
+```
 
-## Integrating SSE into Your Own Applications
+## Using the HTML Client
 
-To integrate SSE into your own applications:
+1. Enter the paths to the files you want to analyze or modify (comma-separated)
+2. Select the operation (analyze_code or modify_code)
+3. If you selected modify_code, enter a description of the modification task
+4. Click "Start Operation"
+5. Watch the real-time progress updates
+6. View the final result when the operation completes
 
-1. Set up an SSE endpoint on your server:
-   ```javascript
-   // Set SSE headers
-   res.writeHead(200, {
-     'Content-Type': 'text/event-stream',
-     'Cache-Control': 'no-cache',
-     'Connection': 'keep-alive'
-   });
-   
-   // Send messages
-   res.write(`data: ${JSON.stringify({ type: 'log', message: 'Processing...' })}\n\n`);
-   ```
+## Technical Details
 
-2. Connect to the SSE endpoint from your client:
-   ```javascript
-   const eventSource = new EventSource('/events');
-   
-   eventSource.onmessage = function(event) {
-     const data = JSON.parse(event.data);
-     console.log(data.message);
-   };
-   ```
+The SSE server runs on port 3002, while the regular HTTP API server runs on port 3001. The MCP server communicates with both servers to provide a seamless experience.
 
-## Benefits of Using SSE with SPARC2
-
-- **Improved User Experience**: Provide real-time feedback during long-running operations
-- **Progress Monitoring**: Track the progress of complex code analysis and modification tasks
-- **Debugging**: See logs and errors in real-time
-- **Reduced Polling**: Eliminate the need for clients to poll the server for updates
-
-## Limitations
-
-- SSE is one-way communication (server to client only)
-- Some proxies may buffer responses, affecting real-time delivery
-- Limited browser support for reconnection and event IDs in older browsers
-
-## Further Enhancements
-
-This example could be extended to:
-
-1. Add authentication for SSE connections
-2. Implement client-specific channels for multi-user environments
-3. Add more detailed progress reporting from SPARC2 operations
-4. Implement reconnection handling with event IDs
-5. Add support for different event types (logs, errors, progress updates, etc.)
+For more detailed information about the SSE implementation, see the [MCP-SSE-USAGE-GUIDE.md](../docs/MCP-SSE-USAGE-GUIDE.md) document.

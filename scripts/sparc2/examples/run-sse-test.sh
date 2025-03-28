@@ -1,99 +1,59 @@
 #!/bin/bash
 
-# Run SSE MCP Test Script
-# This script runs the SSE MCP test with Deno
+# Run SSE Test Script
+# This script starts the MCP server with SSE support and runs the SSE streaming test
 
-# Set colors for output
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+# Get the absolute path to the project root directory
+# We need to go up two levels from the examples directory
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+echo "Project root: $PROJECT_ROOT"
 
-# Get the directory of this script
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-
-# Print header
-echo -e "${BLUE}=== SPARC2 SSE MCP Test ===${NC}"
-echo -e "${YELLOW}This script tests the SSE-enabled MCP server for SPARC2${NC}"
-echo ""
-
-# Check if Deno is installed
-if ! command -v deno &> /dev/null; then
-    echo -e "${RED}Error: Deno is not installed or not in PATH${NC}"
-    echo -e "${YELLOW}Please install Deno:${NC}"
-    echo -e "  curl -fsSL https://deno.land/install.sh | sh"
-    exit 1
+# Check if files were provided
+if [ $# -eq 0 ]; then
+  echo "Usage: $0 [file1.js file2.js ...]"
+  echo "Example: $0 math-utils.js string-utils.js"
+  echo "Using default test files..."
+  TEST_FILES="$PROJECT_ROOT/scripts/sparc2/math-utils.js $PROJECT_ROOT/scripts/sparc2/string-utils.js"
+else
+  # Convert relative paths to absolute paths
+  TEST_FILES=""
+  for file in "$@"; do
+    if [[ "$file" == /* ]]; then
+      # Absolute path
+      TEST_FILES="$TEST_FILES $file"
+    else
+      # Relative path
+      TEST_FILES="$TEST_FILES $PROJECT_ROOT/$file"
+    fi
+  done
 fi
 
-# Function to kill process on port 3333
-kill_port_process() {
-    echo -e "${YELLOW}Checking for processes using port 3333...${NC}"
-    
-    # Get PID of process using port 3333
-    local pid
-    
-    if command -v lsof &> /dev/null; then
-        # Use lsof if available (macOS, Linux)
-        pid=$(lsof -t -i:3333 2>/dev/null)
-    elif command -v netstat &> /dev/null; then
-        # Use netstat as fallback (Windows, some Linux)
-        pid=$(netstat -ano | grep "LISTEN" | grep ":3333" | awk '{print $NF}' 2>/dev/null)
-    else
-        echo -e "${RED}Cannot find tools to check for processes on port 3333${NC}"
-        return 1
-    fi
-    
-    if [ -n "$pid" ]; then
-        echo -e "${YELLOW}Found process with PID $pid using port 3333. Killing it...${NC}"
-        kill -9 $pid 2>/dev/null
-        sleep 1
-        echo -e "${GREEN}Process killed${NC}"
-        return 0
-    else
-        echo -e "${GREEN}No process found using port 3333${NC}"
-        return 0
-    fi
-}
+echo "Starting SPARC2 MCP server with SSE support..."
 
-# Always kill any existing process on port 3333 to ensure a clean start
-kill_port_process
-
-# Start the SSE-enabled MCP server
-echo -e "${YELLOW}Starting SSE-enabled MCP server...${NC}"
-node "$SCRIPT_DIR/../sparc2-mcp-wrapper-sse.js" &
+# Start the MCP server with SSE support in the background
+node "$PROJECT_ROOT/scripts/sparc2/sparc2-mcp-wrapper-sse.js" &
 MCP_PID=$!
 
-# Wait for server to start
-echo -e "${YELLOW}Waiting for server to start...${NC}"
-sleep 5
+# Wait for the server to start
+sleep 3
 
-# Check if server is running by checking if the port is in use
-if lsof -i:3333 > /dev/null 2>&1 || netstat -ano | grep "LISTEN" | grep ":3333" > /dev/null 2>&1; then
-    echo -e "${GREEN}MCP server started successfully with PID $MCP_PID${NC}"
-    STARTED_SERVER=true
+echo "MCP server started with PID: $MCP_PID"
+echo "Running SSE streaming test with files: $TEST_FILES"
+
+# Run the SSE streaming test
+node "$PROJECT_ROOT/scripts/sparc2/examples/sse-streaming.js" analyze $TEST_FILES
+
+# Check if the test was successful
+TEST_EXIT_CODE=$?
+if [ $TEST_EXIT_CODE -ne 0 ]; then
+  echo "SSE streaming test failed with exit code: $TEST_EXIT_CODE"
 else
-    echo -e "${RED}Failed to start MCP server${NC}"
-    echo -e "${YELLOW}Please start the server manually:${NC}"
-    echo -e "  node scripts/sparc2/sparc2-mcp-wrapper-sse.js"
-    exit 1
+  echo "SSE streaming test completed successfully"
 fi
 
-# Run the test
-echo -e "\n${BLUE}Running SSE test...${NC}"
-deno run --allow-net --allow-read "$SCRIPT_DIR/sse-mcp-test.ts"
+# Kill the MCP server
+kill $MCP_PID 2>/dev/null || true
+echo "MCP server stopped."
 
-# Check if we should start the web server
-if [[ "$1" == "--server" ]]; then
-    echo -e "\n${BLUE}Starting web server for HTML client...${NC}"
-    deno run --allow-net --allow-read "$SCRIPT_DIR/sse-mcp-test.ts" --server
-fi
-
-# Clean up if we started the server
-if [[ "$STARTED_SERVER" == "true" ]]; then
-    echo -e "\n${YELLOW}Stopping MCP server (PID $MCP_PID)...${NC}"
-    kill $MCP_PID
-    echo -e "${GREEN}MCP server stopped${NC}"
-fi
-
-echo -e "\n${GREEN}Test complete!${NC}"
+exit $TEST_EXIT_CODE

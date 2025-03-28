@@ -1,211 +1,133 @@
-# Using the SSE-enabled analyze_code MCP Command
+# MCP Server with SSE Support
 
-This guide demonstrates how to use the Server-Sent Events (SSE) enabled `analyze_code` MCP command from different clients, including Roo, JavaScript, and command-line tools.
+This document explains how to use the Server-Sent Events (SSE) functionality in the SPARC2 MCP server.
 
-## Prerequisites
+## Overview
 
-Before you begin, make sure you have:
+The SPARC2 MCP server now supports Server-Sent Events (SSE) for long-running operations like code analysis and modification. This provides real-time progress updates to clients, making the user experience more interactive.
 
-1. SPARC2 installed
-2. Node.js installed
-3. Deno installed (for some examples)
+## Transport Types
 
-## Step 1: Start the SSE-enabled MCP Server
+The MCP server supports two transport mechanisms:
 
-First, you need to start the SSE-enabled MCP server:
+1. **STDIO Transport**: The standard transport used for direct communication between Roo Code and the MCP server.
+2. **SSE Transport**: Used for long-running operations to provide real-time progress updates.
 
-```bash
-# Navigate to the SPARC2 directory
-cd scripts/sparc2
+## Using SSE with MCP Tools
 
-# Start the SSE-enabled MCP server
-node sparc2-mcp-wrapper-sse.js
-```
+### analyze_code
 
-You should see output similar to:
-```
-MCP Wrapper with SSE running from: /path/to/sparc2/scripts/sparc2
-Running MCP server with SSE support
-Connecting to stdio transport...
-SPARC2 MCP server running on stdio
-[MCP Wrapper] Starting HTTP API server on port 3333...
-[MCP Wrapper] Found Deno at: /path/to/deno
-```
-
-## Step 2: Using the MCP Command from Different Clients
-
-### Option 1: Using curl
-
-You can use curl to make an MCP request to the `analyze_code` command:
-
-```bash
-# Make an MCP request to analyze_code
-curl -X POST http://localhost:3333/mcp -H "Content-Type: application/json" -d '{
-  "jsonrpc": "2.0",
-  "method": "callTool",
-  "params": {
-    "name": "analyze_code",
-    "arguments": {
-      "files": ["scripts/sparc2/src/cli/analyzeCommand.ts", "scripts/sparc2/sparc2-analyze-wrapper.js"]
-    }
-  },
-  "id": "1"
-}'
-```
-
-This will return a response with a `streamUrl`:
-
-```json
-{
-  "jsonrpc": "2.0",
-  "result": {
-    "content": [
-      {
-        "type": "text",
-        "text": "Analysis started. Connect to the SSE stream to receive progress updates."
-      }
-    ],
-    "streamUrl": "http://localhost:3333/stream/analyze?id=1711647123456"
-  },
-  "id": "1"
-}
-```
-
-### Option 2: Using JavaScript
-
-You can use JavaScript to make an MCP request and then connect to the SSE stream:
+When using the `analyze_code` tool, the MCP server will return a `streamUrl` that clients can connect to for real-time progress updates:
 
 ```javascript
-// Make the MCP request
-async function analyzeCode() {
-  // Step 1: Make the MCP request
-  const response = await fetch('http://localhost:3333/mcp', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      jsonrpc: '2.0',
-      method: 'callTool',
-      params: {
-        name: 'analyze_code',
-        arguments: {
-          files: ['scripts/sparc2/src/cli/analyzeCommand.ts', 'scripts/sparc2/sparc2-analyze-wrapper.js']
-        }
-      },
-      id: '1'
-    })
-  });
-  
-  const result = await response.json();
-  const streamUrl = result.result.streamUrl;
-  
-  // Step 2: Connect to the SSE stream
-  const eventSource = new EventSource(streamUrl);
-  
-  // Handle progress events
-  eventSource.addEventListener('progress', function(event) {
-    const data = JSON.parse(event.data);
-    console.log(`Progress: ${data.progress}% - ${data.message}`);
-  });
-  
-  // Handle result events
-  eventSource.addEventListener('result', function(event) {
-    const data = JSON.parse(event.data);
-    console.log('Analysis complete:', data.result);
-    eventSource.close();
-  });
-  
-  // Handle error events
-  eventSource.addEventListener('error', function(event) {
-    console.error('Error:', event);
-    eventSource.close();
-  });
+// Example response from analyze_code
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "Analysis started. Connect to the SSE stream to receive progress updates."
+    }
+  ],
+  "streamUrl": "http://localhost:3002/stream/analyze?id=1648224000000&files=path%2Fto%2Ffile1.js%2Cpath%2Fto%2Ffile2.js"
 }
-
-analyzeCode();
 ```
 
-### Option 3: Using the Provided TypeScript Test
+### modify_code
 
-You can use the provided TypeScript test to analyze code:
+Similarly, the `modify_code` tool will return a `streamUrl` for real-time progress updates:
+
+```javascript
+// Example response from modify_code
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "Modification started. Connect to the SSE stream to receive progress updates."
+    }
+  ],
+  "streamUrl": "http://localhost:3002/stream/modify?id=1648224000000&files=path%2Fto%2Ffile1.js&task=Add%20error%20handling"
+}
+```
+
+## SSE Event Types
+
+The SSE server sends different types of events:
+
+1. **progress**: Updates on the operation's progress
+2. **info**: General information about the operation
+3. **error**: Error messages if something goes wrong
+4. **result**: The final result of the operation
+
+### Progress Event Example
+
+```json
+event: progress
+data: {
+  "status": "step",
+  "message": "Parsing code structure",
+  "progress": 15,
+  "step": 2,
+  "totalSteps": 7,
+  "details": "Analyzing syntax and structure of code files"
+}
+```
+
+### Result Event Example
+
+```json
+event: result
+data: {
+  "result": { /* Analysis or modification result */ },
+  "operation": "analyze",
+  "files": ["/path/to/file1.js", "/path/to/file2.js"],
+  "timestamp": "2025-03-28T18:24:35.000Z",
+  "executionTime": "2.5 seconds"
+}
+```
+
+## Connecting to the SSE Stream
+
+You can connect to the SSE stream using the EventSource API in JavaScript:
+
+```javascript
+const eventSource = new EventSource(streamUrl);
+
+eventSource.addEventListener('progress', (event) => {
+  const data = JSON.parse(event.data);
+  console.log(`Progress: ${data.progress}% - ${data.message}`);
+});
+
+eventSource.addEventListener('result', (event) => {
+  const data = JSON.parse(event.data);
+  console.log('Operation completed:', data.result);
+  eventSource.close();
+});
+
+eventSource.addEventListener('error', (event) => {
+  const data = JSON.parse(event.data);
+  console.error('Error:', data.message);
+  eventSource.close();
+});
+```
+
+## Running the MCP Server with SSE Support
+
+To start the MCP server with SSE support, use the following command:
 
 ```bash
-cd scripts/sparc2/examples
-./run-sse-test.sh
+node scripts/sparc2/sparc2-mcp-wrapper-sse.js
 ```
 
-### Option 4: Using the HTML Client
+This will start:
+1. The HTTP API server on port 3001
+2. The SSE server on port 3002
+3. The MCP server using STDIO transport
 
-You can use the provided HTML client to analyze code:
+## Implementation Details
 
-```bash
-cd scripts/sparc2/examples
-./run-sse-test.sh --server
-```
+The SSE implementation provides detailed progress updates for both analyze and modify operations:
 
-Then open a browser to http://localhost:8080 to use the HTML client.
+- **analyze_code**: 7 steps with progress updates
+- **modify_code**: 8 steps with progress updates
 
-### Option 5: Direct SSE Connection
-
-You can connect directly to the SSE endpoint without going through MCP:
-
-```bash
-# Connect directly to the SSE endpoint with curl
-curl -H "Accept: text/event-stream" \
-  "http://localhost:3333/stream/analyze?files=scripts/sparc2/src/cli/analyzeCommand.ts,scripts/sparc2/sparc2-analyze-wrapper.js"
-```
-
-This will stream the SSE events directly to your terminal.
-
-## Step 3: Using with Roo or Other MCP Clients
-
-To use the SSE-enabled `analyze_code` command with Roo or other MCP clients, you need to:
-
-1. Start the SSE-enabled MCP server as shown in Step 1
-2. Configure your MCP client to connect to the server at `http://localhost:3333/mcp`
-3. Call the `analyze_code` tool with the files you want to analyze
-4. Extract the `streamUrl` from the response
-5. Connect to that URL with an EventSource to receive real-time updates
-
-For Roo specifically, you would need to:
-
-1. Register the MCP server:
-   ```
-   /mcp register sparc2-sse http://localhost:3333/mcp
-   ```
-
-2. Call the tool:
-   ```
-   /mcp call sparc2-sse analyze_code '{"files": ["scripts/sparc2/src/cli/analyzeCommand.ts"]}'
-   ```
-
-3. Extract the `streamUrl` from the response and connect to it using an EventSource in your application.
-
-## Troubleshooting
-
-### Server Not Starting
-
-If the server fails to start, check:
-- You have the necessary permissions to start the server
-- Node.js is installed and working correctly
-
-Note: The server will automatically attempt to kill any process using port 3333 if it encounters an "address already in use" error. This auto-recovery feature helps ensure the server can start even if another process is using the port.
-
-### Connection Issues
-
-If you can't connect to the server:
-- Make sure the server is running
-- Check that you're using the correct URL (http://localhost:3333/mcp)
-- Verify there are no firewall issues blocking the connection
-
-### SSE Stream Not Working
-
-If the SSE stream is not working:
-- Make sure your client supports SSE (EventSource)
-- Check that you're using the correct stream URL
-- Verify the server is still running
-
-## Conclusion
-
-The SSE-enabled `analyze_code` MCP command provides real-time progress updates during code analysis, preventing timeouts and improving the user experience. By following this guide, you can use this feature from various clients and integrate it into your own applications.
+Each step includes a description of what's happening, making it easier for users to understand the process.
