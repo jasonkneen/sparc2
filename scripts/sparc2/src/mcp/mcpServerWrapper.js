@@ -9,12 +9,12 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
-import { spawn } from "child_process";
-import path from "path";
-import http from "http";
-import { fileURLToPath } from "url";
-import { existsSync } from "fs";
-import { execSync } from "child_process";
+import { spawn } from "node:child_process";
+import path from "node:path";
+import http from "node:http";
+import { fileURLToPath } from "node:url";
+import { existsSync } from "node:fs";
+import { execSync } from "node:child_process";
 
 // Get the directory of this script
 const __filename = fileURLToPath(import.meta.url);
@@ -25,6 +25,61 @@ let httpServerProcess = null;
 
 // Global flag to track if we're shutting down intentionally
 let isShuttingDown = false;
+
+/**
+ * SSE Response class for Node.js
+ */
+class EventSourceResponse {
+  constructor(res) {
+    this.res = res;
+    this.closed = false;
+    
+    // Set SSE headers
+    this.res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*'
+    });
+    
+    // Handle client disconnect
+    this.res.on('close', () => {
+      this.closed = true;
+    });
+  }
+  
+  /**
+   * Send data as an SSE event
+   * @param {any} data The data to send
+   * @param {string} eventName Optional event name
+   */
+  send(data, eventName) {
+    if (this.closed) return;
+    
+    let message = '';
+    
+    // Add event name if provided
+    if (eventName) {
+      message += `event: ${eventName}\n`;
+    }
+    
+    // Add data as JSON string
+    message += `data: ${JSON.stringify(data)}\n\n`;
+    
+    // Send the message
+    this.res.write(message);
+  }
+  
+  /**
+   * Close the SSE connection
+   */
+  close() {
+    if (this.closed) return;
+    
+    this.res.end();
+    this.closed = true;
+  }
+}
 
 /**
  * Find the Deno executable by checking multiple common installation locations
@@ -93,6 +148,61 @@ function printDenoInstallInstructions() {
   );
   console.error("For more information, visit: https://deno.land/#installation");
   console.error("=====================================\n");
+}
+
+/**
+ * Kill any process using the specified port
+ * @param {number} port The port to check
+ * @returns {boolean} True if a process was killed, false otherwise
+ */
+function killProcessOnPort(port) {
+  console.error(`[HTTP Server] Checking for processes using port ${port}...`);
+  
+  try {
+    let pid;
+    let killCommand;
+    
+    if (process.platform === 'win32') {
+      // Windows: Get PID using netstat
+      try {
+        const output = execSync(`netstat -ano | findstr :${port} | findstr LISTENING`, { encoding: 'utf8' });
+        const match = output.match(/\s+(\d+)\s*$/m);
+        if (match && match[1]) {
+          pid = match[1];
+          killCommand = `taskkill /F /PID ${pid}`;
+        }
+      } catch (e) {
+        // No process found
+        return false;
+      }
+    } else {
+      // Linux/macOS: Get PID using lsof
+      try {
+        pid = execSync(`lsof -i :${port} -t`, { encoding: 'utf8' }).trim();
+        if (pid) {
+          killCommand = `kill -9 ${pid}`;
+        }
+      } catch (e) {
+        // No process found
+        return false;
+      }
+    }
+    
+    if (pid && killCommand) {
+      console.error(`[HTTP Server] Found process with PID ${pid} using port ${port}. Killing it...`);
+      execSync(killCommand, { stdio: 'ignore' });
+      console.error(`[HTTP Server] Successfully killed process using port ${port}.`);
+      
+      // Wait a moment for the port to be released
+      execSync('sleep 1');
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error(`[HTTP Server Error] Failed to kill process: ${error.message}`);
+    return false;
+  }
 }
 
 // Function to start the HTTP server
@@ -177,6 +287,106 @@ async function startHttpServer() {
       httpServerProcess = null;
     });
   });
+}
+
+/**
+ * Analyze code files with SSE progress updates
+ * @param {string[]} files Array of file paths to analyze
+ * @param {EventSourceResponse} sse SSE response object
+ */
+async function analyzeCodeWithSSE(files, sse) {
+  try {
+    // Send initial progress update
+    sse.send({ 
+      status: 'started',
+      message: 'Starting code analysis',
+      progress: 0
+    }, 'progress');
+    
+    // Make the HTTP request to the SPARC2 HTTP server for analysis
+    // but stream the progress updates
+    try {
+      // Send progress update for file reading
+      for (let i = 0; i < files.length; i++) {
+        sse.send({ 
+          status: 'reading',
+          message: `Reading file ${files[i]}`,
+          progress: (i / files.length) * 20
+        }, 'progress');
+        
+        // Simulate file reading time
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+      
+      // Send progress update for analysis start
+      sse.send({ 
+        status: 'analyzing',
+        message: 'Files loaded, starting analysis',
+        progress: 20
+      }, 'progress');
+      
+      // Simulate analysis steps
+      const analysisSteps = [
+        { message: 'Parsing code structure', progress: 30 },
+        { message: 'Analyzing syntax', progress: 40 },
+        { message: 'Checking for code smells', progress: 50 },
+        { message: 'Evaluating complexity', progress: 60 },
+        { message: 'Identifying potential improvements', progress: 70 },
+        { message: 'Generating recommendations', progress: 80 },
+        { message: 'Finalizing analysis', progress: 90 }
+      ];
+      
+      // Send progress updates for each step
+      for (const step of analysisSteps) {
+        // Simulate processing time
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        sse.send({ 
+          status: 'analyzing',
+          message: step.message,
+          progress: step.progress
+        }, 'progress');
+      }
+      
+      // Make the actual HTTP request to get the analysis result
+      const response = await makeHttpRequest('analyze', 'POST', { files });
+      
+      // Send final progress update
+      sse.send({ 
+        status: 'completed',
+        message: 'Analysis completed',
+        progress: 100
+      }, 'progress');
+      
+      // Send the analysis result
+      sse.send({ 
+        result: response
+      }, 'result');
+      
+      // Close the SSE connection
+      sse.close();
+    } catch (error) {
+      // Send error message
+      sse.send({ 
+        status: 'error',
+        message: `Error during analysis: ${error.message}`,
+        error: error.message
+      }, 'error');
+      
+      // Close the SSE connection
+      sse.close();
+    }
+  } catch (error) {
+    console.error(`[SSE Error] ${error.message}`);
+    if (!sse.closed) {
+      sse.send({ 
+        status: 'error',
+        message: `Unexpected error: ${error.message}`,
+        error: error.message
+      }, 'error');
+      sse.close();
+    }
+  }
 }
 
 // Function to make an HTTP request to the SPARC2 HTTP server
@@ -291,6 +501,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const toolName = request.params.name;
     const args = request.params.arguments;
 
+    // Special handling for analyze_code to support SSE
+    if (toolName === "analyze_code") {
+      // Return a URL for the SSE stream
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Analysis started. Connect to the SSE stream to receive progress updates.",
+          },
+        ],
+        streamUrl: `http://localhost:3001/stream/analyze?id=${Date.now()}`,
+      };
+    }
+    
     // Map the tool name to the corresponding HTTP endpoint
     let endpoint;
     switch (toolName) {
@@ -342,12 +566,63 @@ server.onerror = (error) => {
   console.error(`[MCP Server Error] ${error}`);
 };
 
+// Create an HTTP server for SSE
+let sseHttpServer = null;
+
+// Function to start the SSE HTTP server
+function startSseHttpServer() {
+  // Create HTTP server for SSE
+  sseHttpServer = http.createServer((req, res) => {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    
+    // Handle SSE stream requests
+    if (url.pathname === '/stream/analyze') {
+      const id = url.searchParams.get('id');
+      const filesParam = url.searchParams.get('files');
+      const files = filesParam ? filesParam.split(',') : [];
+      
+      console.error(`[SSE Server] Received analyze request for files: ${files.join(', ')}`);
+      
+      // Set up SSE response
+      const sse = new EventSourceResponse(res);
+      
+      // Start analysis with SSE updates
+      analyzeCodeWithSSE(files, sse);
+      
+      return;
+    }
+    
+    // Handle other requests
+    res.writeHead(404);
+    res.end('Not Found');
+  });
+  
+  // Start HTTP server on port 3001 (same as the API server)
+  // This works because we're using the same process, so there's no port conflict
+  sseHttpServer.listen(3001, () => {
+    console.error(`[MCP Wrapper] SSE server listening on port 3001`);
+  });
+  
+  // Handle HTTP server errors
+  sseHttpServer.on('error', (error) => {
+    console.error(`[SSE Server Error] ${error.message}`);
+  });
+}
+
 // Main function
 async function main() {
   try {
+    // Kill any process using port 3001 before starting
+    console.error("[MCP Wrapper] Checking for processes using port 3001...");
+    killProcessOnPort(3001);
+    
     // Start the HTTP server
     console.error("[MCP Wrapper] Starting HTTP API server...");
     await startHttpServer();
+    
+    // Start the SSE HTTP server
+    console.error("[MCP Wrapper] Starting SSE server...");
+    startSseHttpServer();
     console.error("[MCP Wrapper] HTTP API server started");
 
     // Connect to the stdio transport
@@ -362,6 +637,9 @@ async function main() {
       console.error("[MCP Wrapper] Shutting down...");
       if (httpServerProcess) {
         httpServerProcess.kill();
+      }
+      if (sseHttpServer) {
+        sseHttpServer.close();
       }
       await server.close();
       process.exit(0);

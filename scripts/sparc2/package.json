@@ -9,6 +9,7 @@
     "sparc2": "sparc2-cli-wrapper.js",
     "sparc": "sparc2-cli-wrapper.js",
     "sparc2-mcp": "sparc2-mcp-wrapper.js",
+    "sparc2-mcp-sse": "sparc2-mcp-wrapper-sse.js",
     "sparc2-diagnostics": "sparc2-cli-wrapper.js --diagnostics"
   },
   "scripts": {
@@ -21,7 +22,8 @@
     "prepublishOnly": "deno task fmt && npm run build:npm && deno compile --allow-read --allow-write --allow-env --allow-net --allow-run --no-check src/cli/cli.ts -o cli",
     "postinstall": "node -e \"try { require('child_process').execSync('deno --version', {stdio: 'ignore'}); console.log('\\x1b[32m✓ Deno is installed\\x1b[0m'); } catch (e) { console.log('\\x1b[33m⚠ Deno is required but not found. Please install Deno:\\x1b[0m'); console.log('\\x1b[34m  Linux/macOS: curl -fsSL https://deno.land/install.sh | sh\\x1b[0m'); console.log('\\x1b[34m  Windows (PowerShell): irm https://deno.land/install.ps1 | iex\\x1b[0m'); console.log('\\x1b[33m  Or run the included install script: ./install-deno.sh\\x1b[0m'); console.log('\\x1b[33m  See DENO-INSTALLATION.md for detailed instructions\\x1b[0m'); }\"",
     "install-deno": "./install-deno.sh",
-    "diagnostics": "node sparc2-cli-wrapper.js --diagnostics"
+    "diagnostics": "node sparc2-cli-wrapper.js --diagnostics",
+    "start-mcp-sse": "node sparc2-mcp-wrapper-sse.js"
   },
   "keywords": [
     "sparc",
@@ -77,6 +79,7 @@
     "LICENSE",
     "install-deno.sh",
     "sparc2-mcp-wrapper.js",
+    "sparc2-mcp-wrapper-sse.js",
     "sparc2-cli-wrapper.js",
     "DENO-INSTALLATION.md",
     "DENO-SETUP-README.md"

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPARC2 Analyze Code with SSE</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .container {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+        .progress-bar {
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #4CAF50;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .status {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .log {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+            font-family: monospace;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .result {
+            background-color: #e8f5e9;
+            border: 1px solid #c8e6c9;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 20px;
+            display: none;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .error {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>SPARC2 Analyze Code with SSE</h1>
+    
+    <div class="container">
+        <div class="form-group">
+            <label for="files">Files to Analyze (comma-separated):</label>
+            <input type="text" id="files" placeholder="e.g., src/index.js,src/utils.js">
+        </div>
+        
+        <button id="analyze-btn">Analyze Code</button>
+        
+        <div id="progress-container" class="progress-container">
+            <div class="status" id="status">Initializing...</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div id="progress-text">0%</div>
+            
+            <div class="log" id="log"></div>
+            
+            <div class="result" id="result"></div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const analyzeBtn = document.getElementById('analyze-btn');
+            const filesInput = document.getElementById('files');
+            const progressContainer = document.getElementById('progress-container');
+            const statusElement = document.getElementById('status');
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+            const logElement = document.getElementById('log');
+            const resultElement = document.getElementById('result');
+            
+            let eventSource = null;
+            
+            analyzeBtn.addEventListener('click', function() {
+                const files = filesInput.value.trim();
+                
+                if (!files) {
+                    alert('Please enter at least one file path');
+                    return;
+                }
+                
+                // Clear previous results
+                logElement.innerHTML = '';
+                resultElement.style.display = 'none';
+                resultElement.textContent = '';
+                
+                // Show progress container
+                progressContainer.style.display = 'block';
+                
+                // Disable button during analysis
+                analyzeBtn.disabled = true;
+                
+                // Close existing EventSource if any
+                if (eventSource) {
+                    eventSource.close();
+                }
+                
+                // Generate a unique ID for this analysis
+                const analysisId = Date.now();
+                
+                // Create URL with file paths
+                const fileArray = files.split(',').map(f => f.trim());
+                const url = `http://localhost:3333/stream/analyze?id=${analysisId}&files=${encodeURIComponent(fileArray.join(','))}`;
+                
+                // Connect to SSE stream
+                eventSource = new EventSource(url);
+                
+                // Handle progress events
+                eventSource.addEventListener('progress', function(event) {
+                    const data = JSON.parse(event.data);
+                    
+                    // Update status
+                    statusElement.textContent = data.message;
+                    
+                    // Update progress bar
+                    progressFill.style.width = `${data.progress}%`;
+                    progressText.textContent = `${Math.round(data.progress)}%`;
+                    
+                    // Add log entry
+                    const logEntry = document.createElement('div');
+                    logEntry.className = 'log-entry';
+                    logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${data.message}`;
+                    logElement.appendChild(logEntry);
+                    logElement.scrollTop = logElement.scrollHeight;
+                    
+                    // If completed, enable the button
+                    if (data.status === 'completed') {
+                        analyzeBtn.disabled = false;
+                    }
+                });
+                
+                // Handle result events
+                eventSource.addEventListener('result', function(event) {
+                    const data = JSON.parse(event.data);
+                    
+                    // Display the result
+                    resultElement.style.display = 'block';
+                    resultElement.textContent = JSON.stringify(data.result, null, 2);
+                    
+                    // Close the connection
+                    eventSource.close();
+                    eventSource = null;
+                    
+                    // Enable the button
+                    analyzeBtn.disabled = false;
+                });
+                
+                // Handle error events
+                eventSource.addEventListener('error', function(event) {
+                    let errorMessage = 'Connection error';
+                    
+                    try {
+                        const data = JSON.parse(event.data);
+                        errorMessage = data.message || 'Unknown error';
+                    } catch (e) {
+                        // If not valid JSON, use default error message
+                    }
+                    
+                    // Add error log entry
+                    const logEntry = document.createElement('div');
+                    logEntry.className = 'log-entry error';
+                    logEntry.textContent = `[${new Date().toLocaleTimeString()}] ERROR: ${errorMessage}`;
+                    logElement.appendChild(logEntry);
+                    logElement.scrollTop = logElement.scrollHeight;
+                    
+                    // Close the connection
+                    eventSource.close();
+                    eventSource = null;
+                    
+                    // Enable the button
+                    analyzeBtn.disabled = false;
+                });
+                
+                // Handle connection errors
+                eventSource.onerror = function() {
+                    // Add error log entry
+                    const logEntry = document.createElement('div');
+                    logEntry.className = 'log-entry error';
+                    logEntry.textContent = `[${new Date().toLocaleTimeString()}] Connection error. Make sure the MCP server is running.`;
+                    logElement.appendChild(logEntry);
+                    logElement.scrollTop = logElement.scrollHeight;
+                    
+                    // Close the connection
+                    eventSource.close();
+                    eventSource = null;
+                    
+                    // Enable the button
+                    analyzeBtn.disabled = false;
+                };
+            });
+        });
+    </script>
+</body>
+</html>
