@@ -3,8 +3,13 @@
  * Implements the analyze command for the CLI
  */
 
-import { logInfo, logError } from "../logger.ts";
+import { logInfo } from "../logger.ts";
 import { FileToProcess, SPARC2Agent } from "../agent/agent.ts";
+
+// Define types for command arguments and options
+interface AnalyzeCommandArgs {
+  [key: string]: any;
+}
 
 interface AnalyzeCommandOptions {
   files: string;
@@ -16,25 +21,13 @@ interface AnalyzeCommandOptions {
 }
 
 /**
- * Reads the content of files specified by paths.
- * @param filePaths Array of file paths
- * @returns Array of FileToProcess objects
+ * Utility function to handle errors
+ * @param message Error message
+ * @param error Error object
  */
-async function readFiles(filePaths: string[]): Promise<FileToProcess[]> {
-  const files: FileToProcess[] = [];
-  for (const path of filePaths) {
-    try {
-      const content = await Deno.readTextFile(path);
-      files.push({
-        path,
-        originalContent: content,
-      });
-    } catch (error) {
-      logError(`Error reading file ${path}: ${error.message}`);
-      throw error;
-    }
-  }
-  return files;
+function handleError(message: string, error: unknown): void {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  console.error(`${message}: ${errorMessage}`);
 }
 
 /**
@@ -43,7 +36,7 @@ async function readFiles(filePaths: string[]): Promise<FileToProcess[]> {
  * @param options Command options
  */
 export async function analyzeCommand(
-  args: Record<string, any>,
+  args: AnalyzeCommandArgs,
   options: AnalyzeCommandOptions,
 ): Promise<void> {
   try {
@@ -51,7 +44,19 @@ export async function analyzeCommand(
     const filePaths = options.files.split(",").map((f: string) => f.trim());
 
     // Read file contents
-    const files = await readFiles(filePaths);
+    const files: FileToProcess[] = [];
+    for (const path of filePaths) {
+      try {
+        const content = await Deno.readTextFile(path);
+        files.push({
+          path,
+          originalContent: content,
+        });
+      } catch (error) {
+        handleError(`Error reading file ${path}`, error);
+        throw error;
+      }
+    }
 
     // Initialize agent
     const agent = new SPARC2Agent({
@@ -71,16 +76,15 @@ export async function analyzeCommand(
         await Deno.writeTextFile(options.output, JSON.stringify(analysis, null, 2));
         logInfo(`Analysis written to ${options.output}`);
       } catch (error) {
-        logError(`Error writing to output file: ${error.message}`);
+        handleError(`Error writing to output file`, error);
         throw error;
       }
     } else {
       logInfo("Analysis Results:");
-      logInfo(JSON.stringify(analysis, null, 2));
+      console.log(JSON.stringify(analysis, null, 2));
     }
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logError(`Error: ${errorMessage}`);
-    throw error; // Allow the caller to handle the error
+    handleError("Error", error);
+    Deno.exit(1);
   }
 }
