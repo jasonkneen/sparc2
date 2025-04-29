@@ -143,6 +143,71 @@ function runSimplifiedMcpServer() {
               }
             }
           }
+        },
+        {
+          name: "read_file",
+          description: "Read the contents of a file",
+          inputSchema: {
+            type: "object",
+            properties: {
+              path: {
+                type: "string",
+                description: "Path to the file to read"
+              }
+            },
+            required: ["path"]
+          }
+        },
+        {
+          name: "write_file",
+          description: "Write content to a file",
+          inputSchema: {
+            type: "object",
+            properties: {
+              path: {
+                type: "string",
+                description: "Path to the file to write"
+              },
+              content: {
+                type: "string",
+                description: "Content to write to the file"
+              }
+            },
+            required: ["path", "content"]
+          }
+        },
+        {
+          name: "list_files",
+          description: "List files in a directory",
+          inputSchema: {
+            type: "object",
+            properties: {
+              path: {
+                type: "string",
+                description: "Path to the directory to list"
+              },
+              recursive: {
+                type: "boolean",
+                description: "Whether to list files recursively",
+                default: false
+              }
+            },
+            required: ["path"]
+          }
+        },
+        {
+          name: "execute_command",
+          description: "Execute a shell command",
+          inputSchema: {
+            type: "object",
+            properties: {
+              command: {
+                type: "string",
+                description: "Command to execute"
+              }
+            },
+            required: ["command"]
+          }
         }
       ]
     };
