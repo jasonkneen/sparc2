@@ -6,24 +6,16 @@ function subtract(a, b) {
   return a - b;
 }
 
-// Corrected the bug in the multiply function
+// Corrected the bug in this function
 function multiply(a, b) {
-  return a * b; // Corrected to use multiplication
+  return a * b; // Corrected to perform multiplication
 }
 
-// Improved the divide function
+// Improved the function by using modern JavaScript practices
 function divide(a, b) {
   if (b === 0) {
-    throw new DivisionByZeroError("Cannot divide by zero");
+    throw new RangeError("Division by zero"); // Using RangeError for more specificity
   }
-  let result = a / b;
+  const result = a / b; // Using const for block scoping
   return result;
-}
-
-// Custom error class for division by zero
-class DivisionByZeroError extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "DivisionByZeroError";
-  }
 }
