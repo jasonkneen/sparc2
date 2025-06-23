@@ -13,7 +13,7 @@ import { mcpCommand } from "./mcpCommand.ts";
 import { apiCommand } from "./apiCommand.ts";
 
 // Use a hardcoded version
-const VERSION = "2.0.5";
+const VERSION = "2.0.24";
 
 /**
  * CLI command structure

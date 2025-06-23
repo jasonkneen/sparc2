@@ -1,0 +1,42 @@
+# Environment files - never publish these
+*.env
+*.env.*
+.env
+.env.*
+.env.local
+.env.development
+.env.staging
+.env.production
+.env.test
+
+# Development files
+src/**/*.env*
+**/.env*
+
+# Other sensitive files
+secrets/
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Development and testing
+*.log
+coverage/
+.nyc_output/
+.cache/
+.temp/
+.tmp/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build artifacts (keep only final build output)
+build/**/*.env*

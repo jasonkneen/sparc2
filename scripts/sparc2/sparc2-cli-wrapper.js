@@ -281,7 +281,7 @@ function runSimplifiedCli() {
  * Print the CLI help message
  */
 function printHelp() {
-  console.log("SPARC 2.0 CLI v2.0.5");
+  console.log("SPARC 2.0 CLI v2.0.24");
   console.log("");
   console.log("Usage: sparc2 <command> [options]");
   console.log("");
@@ -307,7 +307,7 @@ function printHelp() {
  * Print the CLI version
  */
 function printVersion() {
-  console.log("SPARC 2.0 CLI v2.0.5");
+  console.log("SPARC 2.0 CLI v2.0.24");
 }
 
 /**

@@ -88,7 +88,7 @@ function runSimplifiedMcpServer() {
   const server = new Server(
     {
       name: "sparc2-mcp",
-      version: "2.0.5",
+      version: "2.0.24",
     },
     {
       capabilities: {
